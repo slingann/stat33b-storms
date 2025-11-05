@@ -1,0 +1,183 @@
+---
+title: "HW10: Graphics of Storm Tracks in the North Atlantic"
+subtitle: "Week 10: Iterations and Loops"
+author: "STAT 33B, Fall 2025."
+format: 
+  html:
+    toc: true
+    number-sections: true
+    theme: zephyr
+embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, error = TRUE)
+```
+
+
+::: {.callout-note icon=false}
+
+## General Instructions
+
+-   Use the template file `hw10-template.qmd` to write your answers (e.g. code, descriptions).
+
+-   Rename this file as `hw10-first-last.qmd`, where `first` and `last`
+    are your first and last names (e.g. `hw10-gaston-sanchez.qmd`).
+
+-   Make sure the YAML header in your `qmd` files includes `embed-resources: true`
+
+-   Submit both your qmd and HTML files to the corresponding assignment
+    submission in __bCourses__.
+
+-   Please note that if you only submit one file (either HTML or qmd), a 10% deduction will be applied.
+
+-   Please note that if you submit the incorrect files you will very likely receive no credit.
+
+-   If you use AI tools to answer any part, please indicate that you use such a tool, and also include the prompt(s) that you used to obtain an answer.
+
+:::
+
+
+# Animated Visualization with GIF files
+
+In this assignment you will create a couple of GIF files to visualize 
+storm tracks in the North Atlantic. This is related to what you did in HW6 
+but this time you won't use `"gganimate"`, instead you will produce GIF images
+with some functions from the package `"magick"`.
+
+```{r pkgs, message = FALSE}
+# packages
+library(tidyverse)  # ecosystem of data science packages
+library(spData)     # data set for spatial analysis
+library(magick)     # for gif animation
+```
+```{r}
+storms
+```
+
+
+::: {.callout-important icon=false}
+## Plotting storm tracks reminder
+
+Please refer to HW6 to review how to graph storm tracks of tropical cyclones
+in the North Atlantic. 
+
+Recall that you need the following tables:
+
+- data set: `storms` (from `"tidyverse"`)
+- map data: `world` (from `"spData"`)
+:::
+
+
+\
+
+# Your Turn: Making Individual Graphics for Years 2000-2022
+
+- Your goal is to make and export individual graphics of storm tracks for every 
+year between 2000 and 2022.
+
+- Graph maps of storm tracks making sure that the visual appearance of each graphic
+is okay. In other words, the quality of the graphics should be okay to share 
+with a general audience, with your boss, clients, on social media, etc.
+
+- Write a `for` loop to export the images as PNG files.
+
+- Export each PNG file using `ggsave()`, specifying `width = 6` and `height = 4`
+in inches.
+
+- _Hint_: the function `paste0()` can help you in the creation of the file names:
+e.g. "storm_tracks_2000.png", "storm_tracks_2001.png", ..., "storm_tracks_2022.png"
+
+
+```{r}
+for (yr in 2000:2022) {
+  ggplot(data = filter(storms, year == yr),
+       mapping = aes(x = lat, y = long, group = name, color = name)) + geom_point(size = 1, alpha = 0.3) + labs(title = yr)
+  ggsave(paste0("storm_tracks_", yr, ".png"), width = 6, height = 4)
+}
+```
+
+
+\
+
+# Your Turn: Creating a GIF from exported PNGs
+
+Once you have the set of PNG files (one PNG per year), the next stage involves
+importing them in R to create the GIF image. Follow the steps listed below
+to accomplish this task:
+
+1) Create a character vector `pngs` with the names of the PNG files.
+
+    * <span style="color:#FF00FF">BTW: Make sure the PNG files are in the same directory of your qmd file!!!</span>
+
+2) Run the command `png_list <- lapply(pngs, image_read)` to import all the PNG 
+files into a list.
+
+3) Apply the `image_join()` function to the list `png_list` to combine all the 
+PNG files into a single image. Call the output object `img_joined`, which is 
+a `magick` image object.
+
+4) Apply the function `image_animate()` to your magick image object `img_joined`. 
+This will create the animation. Call the output object `img_animated`. 
+You may want to test different values for the arguments `fps` and `delay`, 
+e.g `fps = 2, delay = 100`, depending on how fast or slow you want the GIF to 
+be played.
+
+5) Finally, export your object `img_animated` to a GIF file with the function
+`image_write()`. You can call the exported file `storm-tracks.gif` or something 
+like that.
+
+```{r}
+pngs <- c()
+for (yr in 2000:2022) {
+  pngs <- c(pngs, paste0("storm_tracks_", yr, ".png"))
+}
+png_list <- lapply(pngs, image_read)
+img_joined <- image_join(png_list)
+img_animated <- image_animate(img_joined, fps = 2, delay = 100)
+image_write(img_animated, "storm-tracks.gif")
+
+```
+```{r}
+img_animated
+```
+
+
+\
+
+# Your Turn: Rinse and Repeat
+
+Make another GIF animation to visualize storm tracks of your choice, based on
+at least 10 individual graphics. 
+
+For instance, you can focus on tropical cyclones in certain months, or also focus
+on certain kind of storms (hurricanes in general, or of a certain category).
+
+Use this opportunity to practice your _tidyverse_ skills for manipulating
+data, and making beautiful graphics.
+
+<span style="color:#FF00FF">Important: For the creation of the PNG files, 
+do this with a <strong>while loop</strong> instead of a for-loop</span>.
+
+```{r}
+yr <- 1975
+while (yr <= 2020) {
+  ggplot(data = filter(storms, year == yr & status == "tropical storm"),
+       mapping = aes(x = lat, y = long, group = name, color = name)) + geom_point(size = 1, alpha = 0.3) + labs(title = yr)
+  ggsave(paste0("tropicals", yr, ".png"), width = 6, height = 4)
+  yr <- yr + 1
+}
+
+pngs1 <- c()
+for (yr in 1975:2020) {
+  pngs1 <- c(pngs1, paste0("tropicals", yr, ".png"))
+}
+png_list1 <- lapply(pngs1, image_read)
+img_joined1 <- image_join(png_list1)
+img_animated1 <- image_animate(img_joined1, fps = 2, delay = 100)
+image_write(img_animated1, "tropicals.gif")
+```
+```{r}
+img_animated1
+```
+
